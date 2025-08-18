@@ -52,6 +52,17 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// Aviation theme colors
+				neon: {
+					cyan: 'hsl(var(--neon-cyan))',
+					purple: 'hsl(var(--neon-purple))',
+					green: 'hsl(var(--neon-green))',
+					orange: 'hsl(var(--neon-orange))'
+				},
+				conflict: {
+					red: 'hsl(var(--conflict-red))',
+					safe: 'hsl(var(--safe-green))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
