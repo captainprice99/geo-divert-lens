@@ -7,41 +7,36 @@ import {
   TrendingUp, 
   AlertTriangle, 
   Fuel,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
+import { useStatsData } from '@/hooks/useApi';
 
 interface StatsPanelProps {
   period: 'baseline' | 'during';
 }
 
-// Mock statistics data
-const mockStats = {
-  baseline: {
-    totalFlights: 45623,
-    avgDetour: 0,
-    totalExtraKm: 0,
-    avgDelay: 0,
-    co2Impact: 0,
-    affectedRoutes: 0
-  },
-  during: {
-    totalFlights: 41289,
-    avgDetour: 187,
-    totalExtraKm: 2847500,
-    avgDelay: 23,
-    co2Impact: 8942,
-    affectedRoutes: 78
-  }
-};
-
-const topAffectedRoutes = [
-  { route: 'IST → FRA', detour: 309, impact: 'High' },
-  { route: 'VIE → WAW', detour: 245, impact: 'Medium' },
-  { route: 'LHR → BUD', detour: 198, impact: 'Medium' },
-];
-
 const StatsPanel: React.FC<StatsPanelProps> = ({ period }) => {
-  const stats = mockStats[period];
+  const { data: stats, loading, error } = useStatsData(period);
+
+  if (loading) {
+    return (
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+        <Card className="glass-panel w-fit">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading statistics...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !stats) {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10">
@@ -122,11 +117,11 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ period }) => {
             </div>
 
             {/* Top Routes */}
-            {period === 'during' && (
+            {period === 'during' && stats.topAffectedRoutes && (
               <div className="col-span-1">
                 <div className="text-xs text-muted-foreground mb-2 text-center">Most Affected</div>
                 <div className="space-y-1">
-                  {topAffectedRoutes.slice(0, 3).map((route, index) => (
+                  {stats.topAffectedRoutes.slice(0, 3).map((route, index) => (
                     <div key={index} className="text-xs">
                       <div className="font-medium text-foreground">{route.route}</div>
                       <div className="text-neon-orange">+{route.detour}km</div>

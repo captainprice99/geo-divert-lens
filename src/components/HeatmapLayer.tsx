@@ -1,62 +1,6 @@
 import { useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
-
-// Mock heatmap data points
-const generateMockHeatmapData = (period: 'baseline' | 'during') => {
-  const points: Array<{ lat: number; lng: number; intensity: number }> = [];
-  
-  // Base flight corridors in Europe/Middle East
-  const corridors = [
-    // Western Europe corridor
-    { lat: 50.0, lng: 8.5, baseIntensity: 0.8 },
-    { lat: 48.8, lng: 2.3, baseIntensity: 0.7 },
-    { lat: 51.5, lng: -0.1, baseIntensity: 0.9 },
-    
-    // Eastern Europe corridor
-    { lat: 52.2, lng: 21.0, baseIntensity: 0.6 },
-    { lat: 47.5, lng: 19.0, baseIntensity: 0.5 },
-    { lat: 50.1, lng: 14.4, baseIntensity: 0.6 },
-    
-    // Turkey/Middle East corridor
-    { lat: 41.0, lng: 29.0, baseIntensity: 0.8 },
-    { lat: 39.9, lng: 32.9, baseIntensity: 0.4 },
-    
-    // Alternative routes (more active during conflict)
-    { lat: 45.8, lng: 15.9, baseIntensity: period === 'during' ? 0.9 : 0.3 }, // Zagreb
-    { lat: 44.8, lng: 20.4, baseIntensity: period === 'during' ? 0.7 : 0.2 }, // Belgrade
-    { lat: 42.7, lng: 23.3, baseIntensity: period === 'during' ? 0.6 : 0.2 }, // Sofia
-  ];
-  
-  corridors.forEach(corridor => {
-    // Generate points around each corridor
-    for (let i = 0; i < 50; i++) {
-      const lat = corridor.lat + (Math.random() - 0.5) * 2;
-      const lng = corridor.lng + (Math.random() - 0.5) * 4;
-      
-      let intensity = corridor.baseIntensity;
-      
-      // Reduce intensity in conflict zones during conflict period
-      if (period === 'during') {
-        // Ukraine area - reduce traffic
-        if (lat > 45 && lat < 52 && lng > 30 && lng < 35) {
-          intensity *= 0.1;
-        }
-        // Middle East area - reduce traffic
-        if (lat > 31 && lat < 33 && lng > 34 && lng < 36) {
-          intensity *= 0.3;
-        }
-      }
-      
-      points.push({
-        lat,
-        lng,
-        intensity: Math.max(0.1, intensity + (Math.random() - 0.5) * 0.3)
-      });
-    }
-  });
-  
-  return points;
-};
+import { useHeatmapData } from '@/hooks/useApi';
 
 interface HeatmapLayerProps {
   map: mapboxgl.Map;
@@ -65,8 +9,10 @@ interface HeatmapLayerProps {
 }
 
 const HeatmapLayer: React.FC<HeatmapLayerProps> = ({ map, period, opacity }) => {
+  const { data: heatmapData, loading, error } = useHeatmapData(period);
+
   useEffect(() => {
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !map.isStyleLoaded() || loading || !heatmapData) return;
 
     const sourceId = `heatmap-${period}`;
     const layerId = `heatmap-layer-${period}`;
@@ -79,30 +25,10 @@ const HeatmapLayer: React.FC<HeatmapLayerProps> = ({ map, period, opacity }) => 
       map.removeSource(sourceId);
     }
 
-    // Generate heatmap data
-    const heatmapData = generateMockHeatmapData(period);
-
-    // Create GeoJSON
-    const geojson: GeoJSON.FeatureCollection = {
-      type: 'FeatureCollection',
-      features: heatmapData.map((point, index) => ({
-        type: 'Feature',
-        properties: {
-          intensity: point.intensity,
-          flightCount: Math.floor(point.intensity * 100),
-          avgDetour: period === 'during' ? Math.floor(point.intensity * 200) : 0
-        },
-        geometry: {
-          type: 'Point',
-          coordinates: [point.lng, point.lat]
-        }
-      }))
-    };
-
-    // Add source
+    // Add source with API data
     map.addSource(sourceId, {
       type: 'geojson',
-      data: geojson
+      data: heatmapData
     });
 
     // Add heatmap layer
@@ -247,7 +173,7 @@ const HeatmapLayer: React.FC<HeatmapLayerProps> = ({ map, period, opacity }) => 
         map.removeSource(sourceId);
       }
     };
-  }, [map, period, opacity]);
+  }, [map, period, opacity, heatmapData, loading]);
 
   return null;
 };

@@ -12,45 +12,10 @@ import {
   TrendingUp,
   MapPin,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Loader2
 } from 'lucide-react';
-
-interface Airport {
-  iata: string;
-  name: string;
-  city: string;
-}
-
-const mockAirports: Airport[] = [
-  { iata: 'IST', name: 'Istanbul Airport', city: 'Istanbul' },
-  { iata: 'FRA', name: 'Frankfurt Airport', city: 'Frankfurt' },
-  { iata: 'LHR', name: 'Heathrow Airport', city: 'London' },
-  { iata: 'CDG', name: 'Charles de Gaulle', city: 'Paris' },
-  { iata: 'VIE', name: 'Vienna Airport', city: 'Vienna' },
-  { iata: 'WAW', name: 'Warsaw Airport', city: 'Warsaw' },
-  { iata: 'PRG', name: 'Prague Airport', city: 'Prague' },
-  { iata: 'BUD', name: 'Budapest Airport', city: 'Budapest' },
-];
-
-interface RouteData {
-  baselineDistance: number;
-  duringDistance: number;
-  detourKm: number;
-  baselineTime: number;
-  duringTime: number;
-  extraFuel: number;
-  co2Impact: number;
-}
-
-const mockRouteData: RouteData = {
-  baselineDistance: 1847,
-  duringDistance: 2156,
-  detourKm: 309,
-  baselineTime: 135,
-  duringTime: 158,
-  extraFuel: 2100,
-  co2Impact: 6.6
-};
+import { useAirports, useRouteComparison } from '@/hooks/useApi';
 
 interface ODComparePanelProps {
   period: 'baseline' | 'during';
@@ -67,8 +32,12 @@ const ODComparePanel: React.FC<ODComparePanelProps> = ({
   const [destination, setDestination] = useState('');
   const [showComparison, setShowComparison] = useState(false);
 
-  const handleCompare = () => {
+  const { data: airports, loading: airportsLoading } = useAirports();
+  const { data: routeData, loading: routeLoading, compareRoute } = useRouteComparison(origin, destination);
+
+  const handleCompare = async () => {
     if (origin && destination) {
+      await compareRoute();
       setShowComparison(true);
     }
   };
@@ -117,11 +86,20 @@ const ODComparePanel: React.FC<ODComparePanelProps> = ({
                       <SelectValue placeholder="Select origin" />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockAirports.map((airport) => (
-                        <SelectItem key={airport.iata} value={airport.iata}>
-                          {airport.iata} - {airport.city}
+                      {airportsLoading ? (
+                        <SelectItem value="" disabled>
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Loading airports...
+                          </div>
                         </SelectItem>
-                      ))}
+                      ) : (
+                        airports.map((airport) => (
+                          <SelectItem key={airport.iata_code} value={airport.iata_code}>
+                            {airport.iata_code} - {airport.city}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -136,11 +114,20 @@ const ODComparePanel: React.FC<ODComparePanelProps> = ({
                       <SelectValue placeholder="Select destination" />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockAirports.map((airport) => (
-                        <SelectItem key={airport.iata} value={airport.iata}>
-                          {airport.iata} - {airport.city}
+                      {airportsLoading ? (
+                        <SelectItem value="" disabled>
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Loading airports...
+                          </div>
                         </SelectItem>
-                      ))}
+                      ) : (
+                        airports.map((airport) => (
+                          <SelectItem key={airport.iata_code} value={airport.iata_code}>
+                            {airport.iata_code} - {airport.city}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -149,14 +136,21 @@ const ODComparePanel: React.FC<ODComparePanelProps> = ({
               <Button
                 onClick={handleCompare}
                 className="w-full bg-gradient-to-r from-neon-cyan to-neon-purple hover:opacity-90"
-                disabled={!origin || !destination}
+                disabled={!origin || !destination || routeLoading}
               >
-                Compare Routes
+                {routeLoading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Comparing...
+                  </div>
+                ) : (
+                  'Compare Routes'
+                )}
               </Button>
             </div>
 
             {/* Comparison Results */}
-            {showComparison && origin && destination && (
+            {showComparison && origin && destination && routeData && (
               <div className="space-y-4 pt-4 border-t border-border">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm">
@@ -174,12 +168,12 @@ const ODComparePanel: React.FC<ODComparePanelProps> = ({
                     <CardContent className="p-3 space-y-2">
                       <div className="text-xs text-muted-foreground">Distance</div>
                       <div className="text-lg font-semibold text-neon-cyan">
-                        {period === 'baseline' ? mockRouteData.baselineDistance : mockRouteData.duringDistance} km
+                        {period === 'baseline' ? routeData.baselineDistance : routeData.duringDistance} km
                       </div>
-                      {period === 'during' && (
+                      {period === 'during' && routeData.detourKm > 0 && (
                         <div className="text-xs text-conflict-red flex items-center gap-1">
                           <TrendingUp className="h-3 w-3" />
-                          +{mockRouteData.detourKm} km detour
+                          +{routeData.detourKm} km detour
                         </div>
                       )}
                     </CardContent>
@@ -192,38 +186,42 @@ const ODComparePanel: React.FC<ODComparePanelProps> = ({
                         Flight Time
                       </div>
                       <div className="text-lg font-semibold text-neon-green">
-                        {formatTime(period === 'baseline' ? mockRouteData.baselineTime : mockRouteData.duringTime)}
+                        {formatTime(period === 'baseline' ? routeData.baselineTime : routeData.duringTime)}
                       </div>
-                      {period === 'during' && (
+                      {period === 'during' && (routeData.duringTime - routeData.baselineTime) > 0 && (
                         <div className="text-xs text-conflict-red">
-                          +{mockRouteData.duringTime - mockRouteData.baselineTime}min extra
+                          +{routeData.duringTime - routeData.baselineTime}min extra
                         </div>
                       )}
                     </CardContent>
                   </Card>
                 </div>
 
-                {period === 'during' && (
+                {period === 'during' && (routeData.extraFuel > 0 || routeData.co2Impact > 0) && (
                   <>
                     <Separator />
                     <div className="space-y-3">
                       <h4 className="font-medium text-sm">Impact Analysis</h4>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="flex items-center gap-1">
-                            <Fuel className="h-3 w-3" />
-                            Extra Fuel
-                          </span>
-                          <span className="font-medium text-neon-orange">
-                            +{mockRouteData.extraFuel.toLocaleString()} L
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span>CO₂ Impact</span>
-                          <span className="font-medium text-conflict-red">
-                            +{mockRouteData.co2Impact} tons
-                          </span>
-                        </div>
+                        {routeData.extraFuel > 0 && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="flex items-center gap-1">
+                              <Fuel className="h-3 w-3" />
+                              Extra Fuel
+                            </span>
+                            <span className="font-medium text-neon-orange">
+                              +{routeData.extraFuel.toLocaleString()} L
+                            </span>
+                          </div>
+                        )}
+                        {routeData.co2Impact > 0 && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span>CO₂ Impact</span>
+                            <span className="font-medium text-conflict-red">
+                              +{routeData.co2Impact} tons
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </>

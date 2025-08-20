@@ -1,1 +1,16 @@
 project_id = "xolsherlxhxsyzrkmlnz"
+
+[functions.heatmap]
+verify_jwt = false
+
+[functions.conflicts]
+verify_jwt = false
+
+[functions.stats]
+verify_jwt = false
+
+[functions.od-routes]
+verify_jwt = false
+
+[functions.airports]
+verify_jwt = false
