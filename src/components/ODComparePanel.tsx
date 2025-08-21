@@ -87,7 +87,7 @@ const ODComparePanel: React.FC<ODComparePanelProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       {airportsLoading ? (
-                        <SelectItem value="" disabled>
+                        <SelectItem value="loading" disabled>
                           <div className="flex items-center gap-2">
                             <Loader2 className="h-3 w-3 animate-spin" />
                             Loading airports...
@@ -115,7 +115,7 @@ const ODComparePanel: React.FC<ODComparePanelProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       {airportsLoading ? (
-                        <SelectItem value="" disabled>
+                        <SelectItem value="loading" disabled>
                           <div className="flex items-center gap-2">
                             <Loader2 className="h-3 w-3 animate-spin" />
                             Loading airports...
