@@ -27,9 +27,18 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    const url = new URL(req.url);
-    const origin = url.searchParams.get('origin');
-    const destination = url.searchParams.get('destination');
+    // Parse request body for POST requests
+    let origin, destination;
+    
+    if (req.method === 'POST') {
+      const body = await req.json();
+      origin = body.origin;
+      destination = body.destination;
+    } else {
+      const url = new URL(req.url);
+      origin = url.searchParams.get('origin');
+      destination = url.searchParams.get('destination');
+    }
 
     if (!origin || !destination) {
       return new Response(JSON.stringify({ error: 'Origin and destination are required' }), {
