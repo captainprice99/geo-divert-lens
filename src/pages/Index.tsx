@@ -6,6 +6,7 @@ import ODComparePanel from '@/components/ODComparePanel';
 import StatsPanel from '@/components/StatsPanel';
 import ConflictLayer from '@/components/ConflictLayer';
 import HeatmapLayer from '@/components/HeatmapLayer';
+import LiveFlightsLayer from '@/components/LiveFlightsLayer';
 
 const Index = () => {
   const [map, setMap] = useState<mapboxgl.Map | null>(null);
@@ -36,6 +37,7 @@ const Index = () => {
         <>
           <ConflictLayer map={map} period={period} />
           <HeatmapLayer map={map} period={period} opacity={heatmapOpacity} />
+          <LiveFlightsLayer map={map} />
         </>
       )}
 

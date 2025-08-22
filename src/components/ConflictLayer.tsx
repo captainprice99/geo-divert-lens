@@ -90,12 +90,14 @@ const ConflictLayer: React.FC<ConflictLayerProps> = ({ map, period }) => {
           );
         }
         
-        hoveredFeatureId = e.features[0].id as string;
+        hoveredFeatureId = e.features[0].properties?.id || e.features[0].id as string;
         
-        map.setFeatureState(
-          { source: sourceId, id: hoveredFeatureId },
-          { hover: true }
-        );
+        if (hoveredFeatureId) {
+          map.setFeatureState(
+            { source: sourceId, id: hoveredFeatureId },
+            { hover: true }
+          );
+        }
 
         // Show tooltip
         const feature = e.features[0];

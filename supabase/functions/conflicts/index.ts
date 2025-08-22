@@ -1,5 +1,52 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
 
+// Mock conflict zones data
+const mockConflictZones = {
+  baseline: {
+    type: 'FeatureCollection',
+    features: []
+  },
+  during: {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: {
+          id: '1',
+          name: 'Eastern Europe Conflict Zone',
+          severity: 3,
+          startTime: '2022-02-24T00:00:00Z',
+          endTime: '2024-12-31T23:59:59Z',
+          description: 'Major conflict affecting air traffic routing'
+        },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[
+            [22, 52], [35, 52], [35, 45], [22, 45], [22, 52]
+          ]]
+        }
+      },
+      {
+        type: 'Feature',
+        properties: {
+          id: '2',
+          name: 'Middle East Tension Zone',
+          severity: 2,
+          startTime: '2023-10-01T00:00:00Z',
+          endTime: '2024-12-31T23:59:59Z',
+          description: 'Regional tensions affecting flight routes'
+        },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[
+            [30, 33], [40, 33], [40, 28], [30, 28], [30, 33]
+          ]]
+        }
+      }
+    ]
+  }
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',

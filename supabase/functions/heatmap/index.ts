@@ -1,5 +1,45 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
 
+// Mock data for demonstration
+const mockHeatmapData = {
+  baseline: {
+    type: 'FeatureCollection',
+    features: Array.from({ length: 50 }, (_, i) => ({
+      type: 'Feature',
+      properties: {
+        intensity: Math.random() * 0.8 + 0.2,
+        flightCount: Math.floor(Math.random() * 100) + 20,
+        avgDetour: 0
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: [
+          Math.random() * 40 - 10, // longitude between -10 and 30
+          Math.random() * 20 + 40   // latitude between 40 and 60
+        ]
+      }
+    }))
+  },
+  during: {
+    type: 'FeatureCollection',
+    features: Array.from({ length: 45 }, (_, i) => ({
+      type: 'Feature',
+      properties: {
+        intensity: Math.random() * 0.6 + 0.1,
+        flightCount: Math.floor(Math.random() * 80) + 15,
+        avgDetour: Math.floor(Math.random() * 150) + 20
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: [
+          Math.random() * 40 - 10,
+          Math.random() * 20 + 40
+        ]
+      }
+    }))
+  }
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',

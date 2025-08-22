@@ -33,11 +33,11 @@ const ODComparePanel: React.FC<ODComparePanelProps> = ({
   const [showComparison, setShowComparison] = useState(false);
 
   const { data: airports, loading: airportsLoading } = useAirports();
-  const { data: routeData, loading: routeLoading, compareRoute } = useRouteComparison(origin, destination);
+  const { data: routeData, loading: routeLoading, compareRoute } = useRouteComparison();
 
   const handleCompare = async () => {
     if (origin && destination) {
-      await compareRoute();
+      await compareRoute(origin, destination);
       setShowComparison(true);
     }
   };

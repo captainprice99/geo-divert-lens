@@ -1,5 +1,81 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
 
+// Mock route comparison data
+const mockRouteComparisons: Record<string, any> = {
+  'FRA-LHR': {
+    baselineDistance: 658,
+    duringDistance: 658,
+    detourKm: 0,
+    baselineTime: 95,
+    duringTime: 95,
+    extraFuel: 0,
+    co2Impact: 0
+  },
+  'LHR-FRA': {
+    baselineDistance: 658,
+    duringDistance: 658,
+    detourKm: 0,
+    baselineTime: 95,
+    duringTime: 95,
+    extraFuel: 0,
+    co2Impact: 0
+  },
+  'CDG-WAW': {
+    baselineDistance: 1365,
+    duringDistance: 1520,
+    detourKm: 155,
+    baselineTime: 130,
+    duringTime: 148,
+    extraFuel: 1085,
+    co2Impact: 3.4
+  },
+  'WAW-CDG': {
+    baselineDistance: 1365,
+    duringDistance: 1520,
+    detourKm: 155,
+    baselineTime: 130,
+    duringTime: 148,
+    extraFuel: 1085,
+    co2Impact: 3.4
+  },
+  'VIE-IST': {
+    baselineDistance: 1048,
+    duringDistance: 1280,
+    detourKm: 232,
+    baselineTime: 105,
+    duringTime: 128,
+    extraFuel: 1624,
+    co2Impact: 5.1
+  },
+  'IST-VIE': {
+    baselineDistance: 1048,
+    duringDistance: 1280,
+    detourKm: 232,
+    baselineTime: 105,
+    duringTime: 128,
+    extraFuel: 1624,
+    co2Impact: 5.1
+  },
+  'PRG-ATH': {
+    baselineDistance: 1245,
+    duringDistance: 1580,
+    detourKm: 335,
+    baselineTime: 125,
+    duringTime: 158,
+    extraFuel: 2345,
+    co2Impact: 7.4
+  },
+  'ATH-PRG': {
+    baselineDistance: 1245,
+    duringDistance: 1580,
+    detourKm: 335,
+    baselineTime: 125,
+    duringTime: 158,
+    extraFuel: 2345,
+    co2Impact: 7.4
+  }
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -49,7 +125,16 @@ Deno.serve(async (req) => {
 
     console.log(`Comparing route ${origin} → ${destination}`);
 
-    // Get route statistics for both periods
+    // Check mock data first
+    const routeKey = `${origin}-${destination}`;
+    if (mockRouteComparisons[routeKey]) {
+      console.log('Using mock data for route:', routeKey);
+      return new Response(JSON.stringify(mockRouteComparisons[routeKey]), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Fallback to database query if no mock data
     const { data: routeStats, error: statsError } = await supabase
       .from('route_statistics')
       .select('*')
@@ -87,18 +172,38 @@ Deno.serve(async (req) => {
       }
 
       // Calculate base distance using Haversine formula
-      const baseDistance = haversineDistance(
-        originAirport.location.coordinates[1], // lat
-        originAirport.location.coordinates[0], // lng
-        destAirport.location.coordinates[1],   // lat
-        destAirport.location.coordinates[0]    // lng
-      );
+      // Handle both POINT geometry and coordinate arrays
+      let originLat, originLng, destLat, destLng;
+      
+      if (originAirport.location && originAirport.location.coordinates) {
+        originLat = originAirport.location.coordinates[1];
+        originLng = originAirport.location.coordinates[0];
+      } else {
+        console.error('Origin airport location missing:', originAirport);
+        return new Response(JSON.stringify({ error: 'Origin airport location data missing' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      if (destAirport.location && destAirport.location.coordinates) {
+        destLat = destAirport.location.coordinates[1];
+        destLng = destAirport.location.coordinates[0];
+      } else {
+        console.error('Destination airport location missing:', destAirport);
+        return new Response(JSON.stringify({ error: 'Destination airport location data missing' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const baseDistance = haversineDistance(originLat, originLng, destLat, destLng);
 
       const baseTime = Math.floor(baseDistance / 800 * 60); // Assume 800 km/h cruise speed
 
       // Check if route passes through conflict zones (simplified check)
-      const avgLat = (originAirport.location.coordinates[1] + destAirport.location.coordinates[1]) / 2;
-      const avgLng = (originAirport.location.coordinates[0] + destAirport.location.coordinates[0]) / 2;
+      const avgLat = (originLat + destLat) / 2;
+      const avgLng = (originLng + destLng) / 2;
       
       let detourKm = 0;
       let extraTime = 0;

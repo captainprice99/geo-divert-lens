@@ -1,5 +1,25 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
 
+// Mock statistics data
+const mockStatistics = {
+  baseline: {
+    totalFlights: 45623,
+    avgDetour: 0,
+    totalExtraKm: 0,
+    avgDelay: 0,
+    co2Impact: 0,
+    affectedRoutes: 0
+  },
+  during: {
+    totalFlights: 38945,
+    avgDetour: 87,
+    totalExtraKm: 3389750,
+    avgDelay: 23,
+    co2Impact: 10673,
+    affectedRoutes: 245
+  }
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
