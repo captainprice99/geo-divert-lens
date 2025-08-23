@@ -1,4 +1,4 @@
-# Geo-Divert Lens
+# FlightLens
 
 A powerful visualization platform that analyzes and visualizes global flight traffic changes during geopolitical conflicts. The platform provides insights into flight density changes, route diversions, delays, and environmental impact during times of airspace restrictions.
 
